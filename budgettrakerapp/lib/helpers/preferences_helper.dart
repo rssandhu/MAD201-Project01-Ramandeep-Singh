@@ -2,37 +2,34 @@
  * Course: MAD101 - Lab 3
  * Name: Ramandeep Singh
  * Student ID: A00194321
- * Description: Stores user settings using SharedPreferences.
+ * Description: Helper class for managing user preferences with SharedPreferences.
  */
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Handles reading and saving user theme/currency preference.
+/// Manages app user preferences like theme and currency using SharedPreferences.
 class PreferencesHelper {
-  SharedPreferences? _prefs;
+  static const String keyTheme = 'theme_is_dark';
+  static const String keyCurrency = 'currency';
 
-  /// Initializes preferences storage.
-  Future<void> init() async {
+  static SharedPreferences? _prefs;
+
+  /// Initialize the SharedPreferences instance.
+  static Future init() async {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  /// Gets saved theme preference.
-  bool getTheme() {
-    return _prefs?.getBool('isDarkTheme') ?? false;
-  }
+  /// Get current theme mode.
+  static bool getTheme() => _prefs?.getBool(keyTheme) ?? false;
 
-  /// Saves theme preference.
-  void setTheme(bool isDark) {
-    _prefs?.setBool('isDarkTheme', isDark);
-  }
+  /// Save theme preference.
+  static Future<bool> setTheme(bool value) async =>
+      _prefs?.setBool(keyTheme, value) ?? Future.value(false);
 
-  /// Gets user currency or defaults to USD.
-  String getCurrency() {
-    return _prefs?.getString('currency') ?? 'USD';
-  }
+  /// Get current currency.
+  static String getCurrency() => _prefs?.getString(keyCurrency) ?? 'USD';
 
-  /// Saves user currency preference.
-  void setCurrency(String currency) {
-    _prefs?.setString('currency', currency);
-  }
+  /// Save currency preference.
+  static Future<bool> setCurrency(String value) async =>
+      _prefs?.setString(keyCurrency, value) ?? Future.value(false);
 }

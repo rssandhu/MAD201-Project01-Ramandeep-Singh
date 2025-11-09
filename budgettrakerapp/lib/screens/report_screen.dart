@@ -2,61 +2,93 @@
  * Course: MAD101 - Lab 3
  * Name: Ramandeep Singh
  * Student ID: A00194321
- * Description: Shows text-only summary of totals by category and month.
+ * Description: Displays summary reports of totals by category and month.
  */
 
 import 'package:flutter/material.dart';
 import '../helpers/db_helper.dart';
+import '../models/transaction_model.dart';
 
-/// Displays budget summary and reports by category and month
-class ReportScreen extends StatefulWidget {
+/// Screen to show categorized and monthly summary totals of transactions.
+class ReportsSummaryScreen extends StatefulWidget {
   @override
-  State<ReportScreen> createState() => _ReportScreenState();
+  _ReportsSummaryScreenState createState() => _ReportsSummaryScreenState();
 }
 
-class _ReportScreenState extends State<ReportScreen> {
-  final db = DBHelper();
-  List<TransactionModel> _txs = [];
-  Map<String, double> _byCategory = {};
-  Map<String, double> _byMonth = {};
-
-  /// Loads and calculates reports data
-  void _load() async {
-    _txs = await db.getAll();
-    _byCategory = {};
-    _byMonth = {};
-    for (var tx in _txs) {
-      _byCategory[tx.category] = (_byCategory[tx.category] ?? 0) + tx.amount;
-      String month = tx.date.substring(0, 7); // YYYY-MM format
-      _byMonth[month] = (_byMonth[month] ?? 0) + tx.amount;
-    }
-    setState(() {});
-  }
+class _ReportsSummaryScreenState extends State<ReportsSummaryScreen> {
+  Map<String, double> categoryTotals = {};
+  Map<String, double> monthTotals = {};
 
   @override
   void initState() {
     super.initState();
-    _load();
+    loadSummary();
+  }
+
+  /// Loads and aggregates totals by category and month.
+  Future<void> loadSummary() async {
+    List<TransactionModel> txs = await DBHelper().getAllTransactions();
+
+    Map<String, double> catTotals = {};
+    Map<String, double> monTotals = {};
+
+    for (var tx in txs) {
+      // Aggregate totals by category
+      catTotals[tx.category] = (catTotals[tx.category] ?? 0) + tx.amount;
+
+      // Aggregate totals by year-month string "YYYY-MM"
+      String month =
+          "${tx.date.year}-${tx.date.month.toString().padLeft(2, '0')}";
+      monTotals[month] = (monTotals[month] ?? 0) + tx.amount;
+    }
+
+    setState(() {
+      categoryTotals = catTotals;
+      monthTotals = monTotals;
+    });
+  }
+
+  /// Helper widget to build Card displaying totals.
+  Widget buildTotalsCard(String title, Map<String, double> totals) {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            SizedBox(height: 8),
+            ...totals.entries
+                .map(
+                  (e) => ListTile(
+                    dense: true,
+                    title: Text(e.key),
+                    trailing: Text(e.value.toStringAsFixed(2)),
+                  ),
+                )
+                .toList(),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Reports & Summary')),
-      body: ListView(
-        children: [
-          Card(child: ListTile(title: Text('Totals by Category'))),
-          ..._byCategory.entries.map(
-            (e) =>
-                ListTile(title: Text('${e.key}'), trailing: Text('${e.value}')),
-          ),
-          SizedBox(height: 16),
-          Card(child: ListTile(title: Text('Totals by Month'))),
-          ..._byMonth.entries.map(
-            (e) =>
-                ListTile(title: Text('${e.key}'), trailing: Text('${e.value}')),
-          ),
-        ],
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          children: [
+            buildTotalsCard('Totals by Category', categoryTotals),
+            SizedBox(height: 20),
+            buildTotalsCard('Totals by Month', monthTotals),
+          ],
+        ),
       ),
     );
   }
