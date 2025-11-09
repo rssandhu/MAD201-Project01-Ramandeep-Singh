@@ -2,71 +2,79 @@
  * Course: MAD101 - Lab 3
  * Name: Ramandeep Singh
  * Student ID: A00194321
- * Description: Shows list of all transactions with edit/delete options.
+ * Description: Lists all transactions with options to delete entries.
  */
 
 import 'package:flutter/material.dart';
 import '../helpers/db_helper.dart';
+import '../models/transaction_model.dart';
 
-/// List view for all transactions
+/// Displays list of transactions with delete option and color-coded amounts.
 class TransactionsListScreen extends StatefulWidget {
   @override
-  State<TransactionsListScreen> createState() => _TransactionsListScreenState();
+  _TransactionsListScreenState createState() => _TransactionsListScreenState();
 }
 
 class _TransactionsListScreenState extends State<TransactionsListScreen> {
-  final db = DBHelper();
-  List<TransactionModel> _txs = [];
-
-  /// Loads transactions from DB
-  void _load() async {
-    _txs = await db.getAll();
-    setState(() {});
-  }
-
-  /// Deletes transaction by id
-  void _delete(int id) async {
-    await db.delete(id);
-    _load();
-  }
+  List<TransactionModel> _transactions = [];
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadTransactions();
+  }
+
+  /// Loads all transactions from the database.
+  Future<void> _loadTransactions() async {
+    final txs = await DBHelper().getAllTransactions();
+    setState(() {
+      _transactions = txs;
+    });
+  }
+
+  /// Deletes a transaction by its [id].
+  Future<void> _deleteTransaction(int id) async {
+    await DBHelper().delete(id);
+    _loadTransactions(); // Refresh after delete
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_transactions.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: Text('Transactions')),
+        body: Center(child: Text('No transactions')),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: Text('Transactions')),
       body: ListView.builder(
-        itemCount: _txs.length,
-        itemBuilder: (context, idx) {
-          final tx = _txs[idx];
-          return Card(
-            child: ListTile(
-              leading: Icon(
-                tx.type == 'Income' ? Icons.arrow_downward : Icons.arrow_upward,
-                color: tx.type == 'Income' ? Colors.green : Colors.red,
-              ),
-              title: Text(tx.title),
-              subtitle: Text('${tx.category} • ${tx.date.split('T')[0]}'),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.edit),
-                    onPressed: () {
-                      /* Optional: Edit screen */
-                    },
+        itemCount: _transactions.length,
+        itemBuilder: (_, index) {
+          final tx = _transactions[index];
+          return ListTile(
+            title: Text(tx.title),
+            subtitle: Text(
+              '${tx.category} - ${tx.date.toLocal().toString().split(" ")[0]}',
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Display amount with color for income/expense
+                Text(
+                  (tx.type == 'Income' ? '+' : '-') +
+                      '${tx.amount.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    color: tx.type == 'Income' ? Colors.green : Colors.red,
                   ),
-                  IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () => _delete(tx.id!),
-                  ),
-                ],
-              ),
+                ),
+                // Delete button
+                IconButton(
+                  icon: Icon(Icons.delete),
+                  onPressed: () => _deleteTransaction(tx.id!),
+                ),
+              ],
             ),
           );
         },

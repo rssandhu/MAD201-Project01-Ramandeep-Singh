@@ -32,21 +32,19 @@
 
   <title>budgettrakerapp</title>
   <link rel="manifest" href="manifest.json">
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sqflite_sw.js').then(() =>
+        console.log('sqflite_sw.js worker registered'))
+        .catch(err =>
+          console.error('sqflite_sw.js worker registration failed:', err));
+    }
+  </script>
 </head>
 
 <body>
   <script src="flutter_bootstrap.js" async></script>
 </body>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sqflite_sw.js')
-      .then(function (registration) {
-        console.log('sqflite_sw.js registered:', registration);
-      })
-      .catch(function (error) {
-        console.error('sqflite_sw.js registration failed:', error);
-      });
-  }
-</script>
 
 </html>
